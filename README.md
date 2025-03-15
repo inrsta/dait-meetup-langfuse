@@ -67,4 +67,8 @@ Use the sidebar in the application to choose between Gemini Chat, OpenAI Chat, o
 - The app uses Langfuse to track requests and responses, ensuring observability over language models.
 - For further customization or issues, check the individual pages for specific API integrations.
 
+## Screenshots
+
+![alt text](assets/readme/image.png)
+
 Happy chatting!
