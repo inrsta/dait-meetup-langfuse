@@ -1,7 +1,7 @@
 import streamlit as st
-import langfuse  # Observability tool for language models
 from langfuse.decorators import observe, langfuse_context
 from config import openai_client
+
 
 @observe(as_type="generation")
 def openai_api(
@@ -28,9 +28,12 @@ def openai_api(
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
+
 def openai_page():
     st.title("Chat with OpenAI's GPT Model")
-    st.write("This chatbot uses OpenAI's GPT API (via the new Responses interface) and Langfuse for observability.")
+    st.write(
+        "This chatbot uses OpenAI's GPT API (via the new Responses interface) and Langfuse for observability."
+    )
 
     if "openai_messages" not in st.session_state:
         st.session_state.openai_messages = []
