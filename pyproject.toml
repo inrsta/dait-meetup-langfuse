@@ -1,0 +1,14 @@
+[project]
+name = "presentation-langfuse"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "anthropic>=0.49.0",
+    "google-genai>=1.5.0",
+    "langfuse>=2.59.7",
+    "load-dotenv>=0.1.0",
+    "openai>=1.66.3",
+    "streamlit>=1.43.1",
+]
