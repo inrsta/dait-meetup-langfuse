@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "anthropic>=0.49.0",
     "google-genai>=1.5.0",
+    "ipykernel>=6.29.5",
     "langfuse>=2.59.7",
     "load-dotenv>=0.1.0",
     "openai>=1.66.3",

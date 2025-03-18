@@ -13,64 +13,91 @@ def openai_api(
     model: str = "gpt-4o-mini",
     instructions: str = "You are a coding assistant that talks like a pirate.",
     **kwargs,
-) -> str:
+) -> dict:
+    # Debug: Log input details.
+    print("DEBUG: Starting openai_api")
+    print(f"DEBUG: Input prompt: {prompt}")
+    print(f"DEBUG: Model: {model}")
+    print(f"DEBUG: Additional kwargs: {kwargs}")
+
     # Update the current observation context with input and metadata.
     langfuse_context.update_current_observation(
         input=prompt, model=model, metadata=kwargs
     )
+    # Capture the trace ID immediately.
+    trace_id = langfuse_context.get_current_trace_id()
+    print(f"DEBUG: Captured Trace ID: {trace_id}")
+
     try:
         response = openai_client.responses.create(
             model=model, instructions=instructions, input=prompt, **kwargs
         )
+        print(f"DEBUG: Received response from openai_client: {response}")
+
         if hasattr(response, "usage"):
-            langfuse_context.update_current_observation(
-                usage_details={
-                    "input": getattr(response.usage, "input_tokens", None),
-                    "output": getattr(response.usage, "output_tokens", None),
-                }
-            )
-        return response.output_text
+            usage_details = {
+                "input": getattr(response.usage, "input_tokens", None),
+                "output": getattr(response.usage, "output_tokens", None),
+            }
+            print(f"DEBUG: Response usage details: {usage_details}")
+            langfuse_context.update_current_observation(usage_details=usage_details)
+        # Return both the response text and the trace ID.
+        result = {"output_text": response.output_text, "trace_id": trace_id}
+        print(f"DEBUG: openai_api result: {result}")
+        return result
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        print(f"DEBUG: Exception in openai_api: {e}")
+        return {"output_text": f"An error occurred: {str(e)}", "trace_id": trace_id}
 
 
 def save_feedback(index):
+    print(f"DEBUG: Saving feedback for message index {index}")
     # Retrieve the feedback value stored in session state.
-    # (Assume the thumbs widget returns "up" for positive and "down" for negative.)
     feedback_value = st.session_state.get(f"feedback_{index}")
+    print(f"DEBUG: Feedback value for message index {index}: {feedback_value}")
+
     # Update the corresponding message with the new feedback.
     st.session_state.openai_messages[index]["feedback"] = feedback_value
 
-    # Convert feedback to a score: here we assume "up" means 1 (helpful) and "down" means 0.
+    # Convert feedback to a score: here "up" means 1 (helpful) and "down" means 0.
     score_value = 1 if feedback_value == "up" else 0
     message = st.session_state.openai_messages[index]
+    print(f"DEBUG: Message being scored: {message}")
 
-    # Send the score to Langfuse.
-    langfuse.score(
-        id=f"score_{index}",  # unique identifier (can be used for idempotency)
-        trace_id=message.get("trace_id"),
-        observation_id=message.get("generation_id"),  # may be None if not available
-        name="helpfulness",
-        value=score_value,
-        data_type="BOOLEAN",
-        comment="User feedback",
+    # Debug: Log details before sending score.
+    trace_id = message.get("trace_id")
+    print(
+        f"DEBUG: Sending score for message index {index} with trace_id: {trace_id}, score_value: {score_value}"
     )
+    try:
+        # Use only the trace_id (like the hardcoded version that works)
+        langfuse.score(
+            id=f"score_{index}",
+            trace_id=trace_id,
+            name="helpfulness",
+            value=score_value,
+        )
+    except Exception as e:
+        print(f"DEBUG: Exception when sending score: {e}")
 
 
 def openai_chat_page():
     st.title("Chat with OpenAI")
     st.write("Interact with our assistant.")
 
-    # Initialize session state for chat messages.
+    # Debug: Log the starting state.
+    print("DEBUG: Starting openai_chat_page")
     if "openai_messages" not in st.session_state:
         st.session_state.openai_messages = []
+        print("DEBUG: Initialized st.session_state.openai_messages as empty list")
+    else:
+        print(f"DEBUG: Existing openai_messages: {st.session_state.openai_messages}")
 
     # Display the chat history along with any feedback widgets.
     for i, message in enumerate(st.session_state.openai_messages):
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
             if message["role"] == "assistant":
-                # Ensure a feedback value exists in session state.
                 st.session_state.setdefault(f"feedback_{i}", message.get("feedback"))
                 st.feedback(
                     "thumbs",
@@ -82,27 +109,29 @@ def openai_chat_page():
 
     # Chat input: when a user sends a message.
     if prompt := st.chat_input("Say something to OpenAI..."):
+        print(f"DEBUG: Received chat input: {prompt}")
         # Append and display the user's message.
         st.session_state.openai_messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
+        print(
+            f"DEBUG: Appended user message. Current openai_messages: {st.session_state.openai_messages}"
+        )
 
-        # Get the assistant's response.
-        response_text = openai_api(prompt)
-        # Capture the current trace id from Langfuse.
-        trace_id = langfuse_context.get_current_trace_id()
+        # Get the assistant's response along with the trace ID.
+        result = openai_api(prompt)
+        print(f"DEBUG: openai_api returned: {result}")
+        response_text = result["output_text"]
+        trace_id = result["trace_id"]
         # Optionally, if available, you could extract a generation id from the response.
-        generation_id = None  # Replace with a real id if applicable.
-
-        # Create the assistant message with feedback metadata.
+        # In this case, we'll omit it.
         assistant_message = {
             "role": "assistant",
             "content": response_text,
             "trace_id": trace_id,
-            "generation_id": generation_id,
-            # "feedback" key will be added once the user interacts.
         }
         st.session_state.openai_messages.append(assistant_message)
+        print(f"DEBUG: Added assistant message: {assistant_message}")
         with st.chat_message("assistant"):
             st.markdown(response_text)
             st.feedback(
