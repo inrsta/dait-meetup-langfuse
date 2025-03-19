@@ -60,7 +60,7 @@ def save_feedback(index):
     st.session_state.openai_messages[index]["feedback"] = feedback_value
 
     # Convert feedback to a score: here "up" means 1 (helpful) and "down" means 0.
-    score_value = 1 if feedback_value == "up" else 0
+    score_value = 1 if (feedback_value == "up" or feedback_value == 1) else 0
     message = st.session_state.openai_messages[index]
     print(f"DEBUG: Message being scored: {message}")
 
@@ -72,10 +72,13 @@ def save_feedback(index):
     try:
         # Use only the trace_id (like the hardcoded version that works)
         langfuse.score(
-            id=f"score_{index}",
+            id=f"score-{trace_id}",
             trace_id=trace_id,
+            # trace_name="openai_api2",
             name="helpfulness",
-            value=score_value,
+            value=int(score_value),
+            data_type="BOOLEAN",
+            comment="Feedback",
         )
     except Exception as e:
         print(f"DEBUG: Exception when sending score: {e}")
