@@ -1,7 +1,6 @@
 from langfuse import Langfuse
 import streamlit as st
 from langfuse.decorators import langfuse_context, observe
-
 from config import openai_client
 
 langfuse = Langfuse()
@@ -80,6 +79,7 @@ def save_feedback(index):
             data_type="BOOLEAN",
             comment="Feedback",
         )
+
     except Exception as e:
         print(f"DEBUG: Exception when sending score: {e}")
 
