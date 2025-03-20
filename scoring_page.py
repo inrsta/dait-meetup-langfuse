@@ -25,7 +25,9 @@ def openai_api(
     selected_user_id = random.choice(user_ids)
     # Update the current observation context with input and metadata.
     langfuse_context.update_current_observation(
-        input=prompt, model=model, metadata=kwargs, user_id=selected_user_id
+        input=prompt,
+        model=model,
+        metadata=kwargs,
     )
     # Capture the trace ID immediately.
     trace_id = langfuse_context.get_current_trace_id()
@@ -43,10 +45,13 @@ def openai_api(
                 "output": getattr(response.usage, "output_tokens", None),
             }
             print(f"DEBUG: Response usage details: {usage_details}")
-            langfuse_context.update_current_observation(usage_details=usage_details)
+            langfuse_context.update_current_observation(
+                usage_details=usage_details,
+            )
         # Return both the response text and the trace ID.
         result = {"output_text": response.output_text, "trace_id": trace_id}
         print(f"DEBUG: openai_api result: {result}")
+        langfuse_context.update_current_trace(user_id=selected_user_id)
         return result
     except Exception as e:
         print(f"DEBUG: Exception in openai_api: {e}")
