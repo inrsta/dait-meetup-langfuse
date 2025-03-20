@@ -1,5 +1,7 @@
-from langfuse import Langfuse
+import random
+
 import streamlit as st
+from langfuse import Langfuse
 from langfuse.decorators import langfuse_context, observe
 from config import openai_client
 
@@ -19,9 +21,11 @@ def openai_api(
     print(f"DEBUG: Model: {model}")
     print(f"DEBUG: Additional kwargs: {kwargs}")
 
+    user_ids = ["user-1", "user-2", "user-3"]
+    selected_user_id = random.choice(user_ids)
     # Update the current observation context with input and metadata.
     langfuse_context.update_current_observation(
-        input=prompt, model=model, metadata=kwargs
+        input=prompt, model=model, metadata=kwargs, user_id=selected_user_id
     )
     # Capture the trace ID immediately.
     trace_id = langfuse_context.get_current_trace_id()
