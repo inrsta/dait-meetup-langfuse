@@ -1,7 +1,11 @@
-import streamlit as st
+import random
+
 import langfuse  # Observability tool for language models
-from langfuse.decorators import observe, langfuse_context
+import streamlit as st
+from langfuse.decorators import langfuse_context, observe
+
 from config import anthropic_client
+
 
 @observe(as_type="generation")
 def anthropic_api(
@@ -18,6 +22,9 @@ def anthropic_api(
     langfuse_context.update_current_observation(
         input=prompt, model=model, metadata=kwargs
     )
+
+    user_ids = ["user-1", "user-2", "user-3"]
+    selected_user_id = random.choice(user_ids)
     try:
         response = anthropic_client.messages.create(
             max_tokens=1024,
@@ -25,6 +32,7 @@ def anthropic_api(
             model=model,
             **kwargs,
         )
+        langfuse_context.update_current_trace(user_id=selected_user_id)
         # Join text if response.content is a list of TextBlock objects.
         if isinstance(response.content, list):
             return "\n".join(block.text for block in response.content)
@@ -32,9 +40,12 @@ def anthropic_api(
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
+
 def anthropic_page():
     st.title("Chat with Anthropics' Claude Model")
-    st.write("This chatbot uses Anthropics' API (Claude) and Langfuse for observability.")
+    st.write(
+        "This chatbot uses Anthropics' API (Claude) and Langfuse for observability."
+    )
 
     if "anthropic_messages" not in st.session_state:
         st.session_state.anthropic_messages = []

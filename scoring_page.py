@@ -6,13 +6,14 @@ from langfuse.decorators import langfuse_context, observe
 from config import openai_client
 
 langfuse = Langfuse()
+prompt = langfuse.get_prompt("default_prompt")
 
 
 @observe(as_type="generation")
 def openai_api(
     prompt: str,
     model: str = "gpt-4o-mini",
-    instructions: str = "You are a coding assistant that talks like a pirate.",
+    instructions: str = prompt.prompt,
     **kwargs,
 ) -> dict:
     # Debug: Log input details.
@@ -68,7 +69,7 @@ def save_feedback(index):
     st.session_state.openai_messages[index]["feedback"] = feedback_value
 
     # Convert feedback to a score: here "up" means 1 (helpful) and "down" means 0.
-    score_value = 1 if (feedback_value == "up" or feedback_value == 1) else 0
+    score_value = 1 if feedback_value == 1 else 0
     message = st.session_state.openai_messages[index]
     print(f"DEBUG: Message being scored: {message}")
 

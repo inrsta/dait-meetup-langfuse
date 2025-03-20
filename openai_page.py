@@ -1,5 +1,8 @@
+import random
+
 import streamlit as st
-from langfuse.decorators import observe, langfuse_context
+from langfuse.decorators import langfuse_context, observe
+
 from config import openai_client
 
 
@@ -13,10 +16,15 @@ def openai_api(
     langfuse_context.update_current_observation(
         input=prompt, model=model, metadata=kwargs
     )
+
+    user_ids = ["user-1", "user-2", "user-3"]
+    selected_user_id = random.choice(user_ids)
+
     try:
         response = openai_client.responses.create(
             model=model, instructions=instructions, input=prompt, **kwargs
         )
+        langfuse_context.update_current_trace(user_id=selected_user_id)
         if hasattr(response, "usage"):
             langfuse_context.update_current_observation(
                 usage_details={
